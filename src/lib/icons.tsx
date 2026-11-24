@@ -18,3 +18,6 @@ export const IconBell = svg(<><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3
 export const IconPin = svg(<><path d="M20 10c0 6-8 12-8 12s-8-6-8-12a8 8 0 0 1 16 0z" /><circle cx="12" cy="10" r="3" /></>);
 export const IconHome = svg(<><path d="M3.5 9.5l8.5-6.5 8.5 6.5" /><path d="M5 9v11a1 1 0 0 0 1 1h12a1 1 0 0 0 1-1V9" /></>);
 export const IconArrow = svg(<path d="M5 12h14M13 6l6 6-6 6" />);
+
+export const IconBrief = svg(<><rect x="2.5" y="7.5" width="19" height="13" rx="2.5" /><path d="M8 7.5V6a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v1.5" /></>);
+export const IconCheck = svg(<path d="M20 6L9 17l-5-5" />);

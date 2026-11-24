@@ -1,5 +1,8 @@
 # ACED Attendance
 
+[![Deploy to Netlify](https://www.netlify.com/img/deploy/button.svg)](https://app.netlify.com/start/deploy?repository=https://github.com/lacxis/ACED)
+
+
 Workforce attendance for **ACED Business Solutions Consulting** — office, work-from-home and client-site, recorded accurately for every working day.
 
 Stack: **React 18 + TypeScript + Vite**, **Firebase** (Auth + Realtime Database), deployed to **Netlify**. Privileged operations run in **Netlify Functions**.

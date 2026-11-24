@@ -3,6 +3,7 @@ import { AuthProvider, useAuth } from '@/context/AuthContext';
 import { AppShell } from '@/layouts/AppShell';
 import { LoginPage } from '@/features/auth/LoginPage';
 import { EmployeeDashboard } from '@/features/dashboard/EmployeeDashboard';
+import { AttendancePage } from '@/features/attendance/AttendancePage';
 
 function Placeholder({ title }: { title: string }) {
   return (
@@ -23,7 +24,7 @@ function Shell() {
     <AppShell>
       <Routes>
         <Route path="/" element={<EmployeeDashboard />} />
-        <Route path="/attendance" element={<Placeholder title="Attendance" />} />
+        <Route path="/attendance" element={<AttendancePage />} />
         <Route path="/directory" element={<Placeholder title="Directory" />} />
         <Route path="/leave" element={<Placeholder title="Leave" />} />
         <Route path="/notifications" element={<Placeholder title="Notifications" />} />
