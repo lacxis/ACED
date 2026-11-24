@@ -20,6 +20,9 @@ describe('deriveStatus', () => {
   it('no record yet, day not ended -> not_started', () => {
     expect(deriveStatus(null, '2026-11-23', S, { dayEnded: false })).toBe('not_started');
   });
+  it('late arrival still clocked in (day not ended) -> late', () => {
+    expect(deriveStatus(rec('08:31'), '2026-11-23', S, { dayEnded: false })).toBe('late');
+  });
   it('clocked in but not out, day ended -> incomplete', () => {
     expect(deriveStatus(rec('08:00'), '2026-11-23', S, { dayEnded: true })).toBe('incomplete');
   });

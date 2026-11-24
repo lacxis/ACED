@@ -29,3 +29,15 @@ export const sampleLeave: LeaveRequest[] = [
 export const sampleBalances: Record<string, Record<string, number>> = {
   s4: { Annual: 15, Sick: 12, Compassionate: 5 },
 };
+
+/** A fortnight of history for the demo employee (Emeka, s4). */
+export const sampleHistory: { date: string; rec: AttendanceRecord }[] = [
+  { date: '2026-11-23', rec: { clockIn: '07:55', clockOut: '17:06', workLocation: 'office', source: 'self' } },
+  { date: '2026-11-21', rec: { clockIn: '08:08', clockOut: '16:58', workLocation: 'home', source: 'self' } }, // Fri
+  { date: '2026-11-20', rec: { clockIn: '08:22', clockOut: '17:14', workLocation: 'office', source: 'self' } }, // Thu, late
+  { date: '2026-11-19', rec: { clockIn: '08:01', clockOut: '17:02', workLocation: 'home', source: 'self' } }, // Wed
+  { date: '2026-11-18', rec: { clockIn: '07:59', clockOut: '17:00', workLocation: 'office', source: 'self' } }, // Tue
+  { date: '2026-11-17', rec: { clockIn: '08:03', clockOut: '16:49', workLocation: 'office', source: 'self' } }, // Mon
+];
+
+export const sampleClients = ['Craneburg Construction', 'Dumez Nigeria', 'Geoplex OFS', 'NRS Nigeria'];

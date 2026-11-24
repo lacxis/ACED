@@ -16,12 +16,14 @@ export function deriveStatus(
   if (!isWorkingDay(dateStr, settings, holidays)) return 'non_working';
   if (opts.onApprovedLeave) return 'on_leave';
   if (!rec || !rec.clockIn) return opts.dayEnded ? 'absent' : 'not_started';
+  // Lateness is decided at arrival, so it shows immediately — a manager sees
+  // a late arrival on the live register without waiting for the clock-out.
+  const late = rec.clockIn > settings.lateThreshold;
   if (!rec.clockOut) {
-    // clocked in, no clock-out yet
-    return opts.dayEnded ? 'incomplete' : 'clocked_in';
+    if (opts.dayEnded) return 'incomplete';
+    return late ? 'late' : 'clocked_in';
   }
-  // completed day — on time or late?
-  return rec.clockIn <= settings.lateThreshold ? 'present' : 'late';
+  return late ? 'late' : 'present';
 }
 
 export const STATUS_LABEL: Record<AttendanceStatus, string> = {
