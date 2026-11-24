@@ -1,0 +1,12 @@
+/* ACED Attendance — design tokens (Seamless direction) */
+:root {
+  --navy:#0B1B4D; --navy-2:#1A3578; --orange:#F07A1A; --orange-2:#DA6207;
+  --canvas:#F5F6FB; --card:#FFFFFF; --soft:#EEF1F8; --line:#E7ECF4; --line-2:#F0F3F9;
+  --ink:#141C30; --ink-2:#596481; --ink-3:#95A0B6;
+  --green:#12A06B; --green-t:#E4F5EE; --amber:#DC9009; --amber-t:#FBF1DB;
+  --red:#E04747; --red-t:#FBE9E9; --blue:#3B73E6; --blue-t:#E8F0FD;
+  --purple:#7E52DE; --purple-t:#F0EAFB; --teal:#0FA69D; --teal-t:#E0F5F3;
+  --r:22px; --r-sm:15px; --r-xs:11px; --gap:1.05rem;
+  --sh:0 10px 30px rgba(20,28,48,.06); --sh-sm:0 2px 10px rgba(20,28,48,.05);
+  --font:'Plus Jakarta Sans',system-ui,sans-serif; --mono:'JetBrains Mono',monospace;
+}
