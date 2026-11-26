@@ -53,15 +53,17 @@ export function Tile({ label, value, sub, tint }: { label: string; value: string
   );
 }
 
-export function Button({ children, variant = 'primary', onClick, full }: {
+export function Button({ children, variant = 'primary', onClick, full, disabled, type }: {
   children: ReactNode; variant?: 'primary' | 'ghost'; onClick?: () => void; full?: boolean;
+  disabled?: boolean; type?: 'button' | 'submit';
 }) {
   const primary = variant === 'primary';
   return (
-    <button onClick={onClick} style={{
+    <button onClick={onClick} disabled={disabled} type={type} style={{
       display: 'inline-flex', alignItems: 'center', justifyContent: 'center', gap: '.45rem',
       fontWeight: 700, fontSize: '.83rem', padding: '.62rem 1.05rem', borderRadius: 13, border: 0,
-      width: full ? '100%' : undefined,
+      width: full ? '100%' : undefined, cursor: disabled ? 'default' : 'pointer',
+      opacity: disabled ? 0.65 : 1,
       background: primary ? 'linear-gradient(135deg,var(--orange),var(--orange-2))' : 'var(--card)',
       color: primary ? '#fff' : 'var(--ink)',
       boxShadow: primary ? '0 7px 16px rgba(240,122,26,.3)' : 'none',

@@ -1,50 +1,47 @@
 import { useState } from 'react';
 import { useAuth } from '@/context/AuthContext';
 import { Card, Badge, Tile, Button } from '@/components/ui';
-import { DEFAULT_SETTINGS } from '@/domain/schedule';
 import { DEFAULT_LEAVE_TYPES, workingDaysBetween, remainingBalance, overlaps } from '@/domain/leave';
 import { businessDate } from '@/domain/time';
 import { canApproveLeaveFor, managesPeople, seesCompanyWide, myReports } from '@/domain/permissions';
-import { sampleLeave, sampleStaff } from '@/data/sample';
-import type { LeaveRequest, RoleSet } from '@/types';
+import { useStaff, useMyLeaves, useAllLeaves, useLeavesFor, useSettings } from '@/services/hooks';
+import * as api from '@/services/db';
+import type { Employee, AttendanceSettings } from '@/types';
 
-const S = DEFAULT_SETTINGS;
 const fmtDate = (d: string) => new Intl.DateTimeFormat('en-GB', { day: '2-digit', month: 'short', timeZone: 'Africa/Lagos' }).format(new Date(`${d}T12:00:00Z`));
-const staffOf = (uid: string) => sampleStaff.find((x) => x.uid === uid);
-const nameOf = (uid: string) => { const s = staffOf(uid); return s ? `${s.firstName} ${s.lastName}` : uid; };
 
 /** Everyone can apply for their own leave. */
-function MyLeave({ uid }: { uid: string }) {
-  const [requests, setRequests] = useState<LeaveRequest[]>(
-    sampleLeave.filter((r) => r.uid === uid).concat([
-      { id: 'own1', uid, type: 'Annual', startDate: '2026-10-06', endDate: '2026-10-07', days: 2, status: 'approved', createdAt: '2026-09-30' },
-    ]),
-  );
+function MyLeave({ uid, settings }: { uid: string; settings: AttendanceSettings }) {
+  const { leaves, loading } = useMyLeaves(uid);
   const [type, setType] = useState('annual');
   const [start, setStart] = useState('');
   const [end, setEnd] = useState('');
   const [reason, setReason] = useState('');
   const [error, setError] = useState('');
-  const days = start && end ? workingDaysBetween(start, end, S) : 0;
+  const [busy, setBusy] = useState(false);
+  const days = start && end ? workingDaysBetween(start, end, settings) : 0;
 
-  function submit() {
+  async function submit() {
     setError('');
     if (!start || !end) { setError('Pick a start and end date.'); return; }
     if (days < 1) { setError('That range has no working days.'); return; }
-    const draft: LeaveRequest = {
-      id: `d${Date.now()}`, uid, type: DEFAULT_LEAVE_TYPES.find((t) => t.id === type)!.name,
-      startDate: start, endDate: end, days, reason, status: 'pending', createdAt: businessDate(),
+    const draft = {
+      type: DEFAULT_LEAVE_TYPES.find((t) => t.id === type)!.name,
+      startDate: start, endDate: end, days, reason, status: 'pending' as const, createdAt: businessDate(),
     };
-    if (overlaps(draft, requests)) { setError('This overlaps leave you already have.'); return; }
-    setRequests((r) => [draft, ...r]); setStart(''); setEnd(''); setReason('');
+    if (overlaps({ ...draft, id: 'new', uid }, leaves)) { setError('This overlaps leave you already have.'); return; }
+    setBusy(true);
+    try { await api.applyLeave(uid, draft); setStart(''); setEnd(''); setReason(''); }
+    catch { setError('Could not submit. Try again.'); }
+    finally { setBusy(false); }
   }
-  const cancel = (id: string) => setRequests((r) => r.map((x) => (x.id === id ? { ...x, status: 'cancelled' } : x)));
+  const cancel = (id: string) => api.cancelLeave(uid, id).catch(() => {});
 
   return (
     <>
       <div className="grid-3" style={{ marginBottom: '1.05rem' }}>
         {DEFAULT_LEAVE_TYPES.slice(0, 3).map((t) => (
-          <Tile key={t.id} label={t.name} value={String(remainingBalance(t.days, requests, t.id))} sub={`of ${t.days} days left`} tint="var(--orange)" />
+          <Tile key={t.id} label={t.name} value={String(remainingBalance(t.days, leaves, t.id))} sub={`of ${t.days} days left`} tint="var(--orange)" />
         ))}
       </div>
       <div className="row">
@@ -58,22 +55,26 @@ function MyLeave({ uid }: { uid: string }) {
           <Field label="Reason (optional)"><input value={reason} onChange={(e) => setReason(e.target.value)} placeholder="Brief reason" style={input} /></Field>
           {days > 0 && <div style={{ fontSize: '.78rem', color: 'var(--ink-2)', margin: '.2rem 0 .6rem' }}>That's <b>{days}</b> working day{days > 1 ? 's' : ''}.</div>}
           {error && <div style={{ fontSize: '.78rem', color: 'var(--red)', marginBottom: '.6rem' }}>{error}</div>}
-          <Button onClick={submit}>Submit request</Button>
+          <Button onClick={submit} disabled={busy}>{busy ? 'Submitting…' : 'Submit request'}</Button>
         </Card>
         <Card style={{ flex: 1.3 }}>
           <div style={{ fontWeight: 800, fontSize: '.96rem', marginBottom: '.9rem' }}>My requests</div>
-          <div style={{ overflowX: 'auto' }}>
-            <table style={table}>
-              <thead><tr><Th>Type</Th><Th>Dates</Th><Th>Days</Th><Th>Status</Th><Th /></tr></thead>
-              <tbody>
-                {requests.map((r) => (
-                  <tr key={r.id}><Td>{r.type}</Td><Td>{fmtDate(r.startDate)} – {fmtDate(r.endDate)}</Td><Td>{r.days}</Td>
-                    <Td><Badge status={statusBadge(r.status)} label={cap(r.status)} /></Td>
-                    <Td>{r.status === 'pending' && <button onClick={() => cancel(r.id)} style={linkBtn}>Cancel</button>}</Td></tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
+          {loading ? <div className="muted" style={{ fontSize: '.8rem' }}>Loading…</div>
+            : leaves.length === 0 ? <div className="muted" style={{ fontSize: '.8rem' }}>No leave requests yet.</div>
+            : (
+            <div style={{ overflowX: 'auto' }}>
+              <table style={table}>
+                <thead><tr><Th>Type</Th><Th>Dates</Th><Th>Days</Th><Th>Status</Th><Th /></tr></thead>
+                <tbody>
+                  {leaves.map((r) => (
+                    <tr key={r.id}><Td>{r.type}</Td><Td>{fmtDate(r.startDate)} – {fmtDate(r.endDate)}</Td><Td>{r.days}</Td>
+                      <Td><Badge status={statusBadge(r.status)} label={cap(r.status)} /></Td>
+                      <Td>{r.status === 'pending' && <button onClick={() => cancel(r.id)} style={linkBtn}>Cancel</button>}</Td></tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          )}
         </Card>
       </div>
     </>
@@ -82,15 +83,21 @@ function MyLeave({ uid }: { uid: string }) {
 
 /** Shown to anyone who oversees people. Approve is gated per-request by the
  *  line-manager rule, so an executive only acts on their own reports. */
-function ApprovalQueue({ uid, roles }: { uid: string; roles: RoleSet }) {
-  const companyWide = seesCompanyWide(roles);
-  const reportUids = new Set(myReports(uid, sampleStaff).map((s) => s.uid));
-  const visible = sampleLeave
-    .concat([{ id: 'm3', uid: 's6', type: 'Sick', startDate: '2026-11-24', endDate: '2026-11-24', days: 1, status: 'approved', approvedBy: 'Grace Adeyemi', createdAt: '2026-11-24' }])
-    .filter((r) => companyWide || reportUids.has(r.uid));
-  const [requests, setRequests] = useState<LeaveRequest[]>(visible);
-  const decide = (id: string, status: 'approved' | 'rejected') =>
-    setRequests((r) => r.map((x) => (x.id === id && x.status === 'pending' ? { ...x, status, approvedBy: 'You' } : x)));
+function ApprovalQueue({ me, staff }: { me: Employee; staff: Employee[] }) {
+  const companyWide = seesCompanyWide(me.roles);
+  const reports = myReports(me.uid, staff);
+  const reportUids = reports.map((s) => s.uid);
+  const all = useAllLeaves(companyWide);
+  const mine = useLeavesFor(companyWide ? [] : reportUids);
+  const requests = companyWide ? all.leaves : mine.leaves;
+  const loading = companyWide ? all.loading : mine.loading;
+
+  const staffOf = (uid: string) => staff.find((x) => x.uid === uid);
+  const nameOf = (uid: string) => { const s = staffOf(uid); return s ? `${s.firstName} ${s.lastName}` : uid; };
+  const myName = `${me.firstName} ${me.lastName}`;
+
+  const decide = (ownerUid: string, id: string, status: 'approved' | 'rejected') =>
+    api.decideLeave(ownerUid, id, status, myName).catch(() => {});
   const pending = requests.filter((r) => r.status === 'pending');
 
   return (
@@ -101,38 +108,42 @@ function ApprovalQueue({ uid, roles }: { uid: string; roles: RoleSet }) {
       </div>
       <div className="grid-4" style={{ marginBottom: '1.05rem' }}>
         <Tile label="Awaiting" value={String(pending.length)} sub="pending" tint="var(--amber)" />
-        <Tile label="Your reports" value={String(reportUids.size)} sub="you approve" tint="var(--blue)" />
+        <Tile label="Your reports" value={String(reportUids.length)} sub="you approve" tint="var(--blue)" />
         <Tile label="Approved" value={String(requests.filter((r) => r.status === 'approved').length)} sub="shown" tint="var(--green)" />
         <Tile label="Requests" value={String(requests.length)} sub="visible" tint="var(--purple)" />
       </div>
       <Card>
         <div style={{ fontWeight: 800, fontSize: '.96rem', marginBottom: '.9rem' }}>Leave requests</div>
-        <div style={{ overflowX: 'auto' }}>
-          <table style={table}>
-            <thead><tr><Th>Employee</Th><Th>Type</Th><Th>Dates</Th><Th>Days</Th><Th>Status</Th><Th /></tr></thead>
-            <tbody>
-              {requests.map((r) => {
-                const canApprove = canApproveLeaveFor({ uid, roles }, staffOf(r.uid)?.reportingManager);
-                return (
-                  <tr key={r.id}>
-                    <Td><b style={{ fontSize: '.8rem' }}>{nameOf(r.uid)}</b></Td>
-                    <Td>{r.type}</Td><Td>{fmtDate(r.startDate)} – {fmtDate(r.endDate)}</Td><Td>{r.days}</Td>
-                    <Td><Badge status={statusBadge(r.status)} label={cap(r.status)} /></Td>
-                    <Td>
-                      {r.status === 'pending' && canApprove && (
-                        <div style={{ display: 'flex', gap: '.4rem' }}>
-                          <button onClick={() => decide(r.id, 'approved')} style={{ ...pillBtn, background: 'var(--green-t)', color: 'var(--green)' }}>Approve</button>
-                          <button onClick={() => decide(r.id, 'rejected')} style={{ ...pillBtn, background: 'var(--red-t)', color: 'var(--red)' }}>Reject</button>
-                        </div>
-                      )}
-                      {r.status === 'pending' && !canApprove && <span className="muted" style={{ fontSize: '.7rem' }}>Not your report</span>}
-                    </Td>
-                  </tr>
-                );
-              })}
-            </tbody>
-          </table>
-        </div>
+        {loading ? <div className="muted" style={{ fontSize: '.8rem' }}>Loading…</div>
+          : requests.length === 0 ? <div className="muted" style={{ fontSize: '.8rem' }}>No requests to review.</div>
+          : (
+          <div style={{ overflowX: 'auto' }}>
+            <table style={table}>
+              <thead><tr><Th>Employee</Th><Th>Type</Th><Th>Dates</Th><Th>Days</Th><Th>Status</Th><Th /></tr></thead>
+              <tbody>
+                {requests.map((r) => {
+                  const canApprove = canApproveLeaveFor(me, staffOf(r.uid)?.reportingManager);
+                  return (
+                    <tr key={`${r.uid}/${r.id}`}>
+                      <Td><b style={{ fontSize: '.8rem' }}>{nameOf(r.uid)}</b></Td>
+                      <Td>{r.type}</Td><Td>{fmtDate(r.startDate)} – {fmtDate(r.endDate)}</Td><Td>{r.days}</Td>
+                      <Td><Badge status={statusBadge(r.status)} label={cap(r.status)} /></Td>
+                      <Td>
+                        {r.status === 'pending' && canApprove && (
+                          <div style={{ display: 'flex', gap: '.4rem' }}>
+                            <button onClick={() => decide(r.uid, r.id, 'approved')} style={{ ...pillBtn, background: 'var(--green-t)', color: 'var(--green)' }}>Approve</button>
+                            <button onClick={() => decide(r.uid, r.id, 'rejected')} style={{ ...pillBtn, background: 'var(--red-t)', color: 'var(--red)' }}>Reject</button>
+                          </div>
+                        )}
+                        {r.status === 'pending' && !canApprove && <span className="muted" style={{ fontSize: '.7rem' }}>Not your report</span>}
+                      </Td>
+                    </tr>
+                  );
+                })}
+              </tbody>
+            </table>
+          </div>
+        )}
       </Card>
     </div>
   );
@@ -140,16 +151,18 @@ function ApprovalQueue({ uid, roles }: { uid: string; roles: RoleSet }) {
 
 export function LeavePage() {
   const { user } = useAuth();
+  const { staff } = useStaff();
+  const settings = useSettings();
   if (!user) return null;
-  const manages = managesPeople({ uid: user.uid, roles: user.roles }, sampleStaff.map((s) => s.reportingManager));
+  const manages = managesPeople({ uid: user.uid, roles: user.roles }, staff.map((s) => s.reportingManager));
   return (
     <>
       <div style={{ marginBottom: '1.05rem' }}>
         <div style={{ fontWeight: 800, fontSize: '1.3rem', letterSpacing: '-.02em' }}>Leave</div>
-        <div style={{ color: 'var(--ink-2)', fontSize: '.8rem', marginTop: 3 }}>Apply for your own leave{manages ? ", and review your team’s requests." : " and track your balances."}</div>
+        <div style={{ color: 'var(--ink-2)', fontSize: '.8rem', marginTop: 3 }}>Apply for your own leave{manages ? ", and review your team’s requests." : ' and track your balances.'}</div>
       </div>
-      <MyLeave uid={user.uid} />
-      {manages && <ApprovalQueue uid={user.uid} roles={user.roles} />}
+      <MyLeave uid={user.uid} settings={settings} />
+      {manages && <ApprovalQueue me={user} staff={staff} />}
     </>
   );
 }

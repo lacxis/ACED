@@ -1,37 +1,85 @@
-import { createContext, useContext, useEffect, useState, type ReactNode } from 'react';
+import { createContext, useContext, useEffect, useRef, useState, type ReactNode } from 'react';
+import {
+  onAuthStateChanged, signInWithEmailAndPassword, createUserWithEmailAndPassword,
+  signOut as fbSignOut, type User as FbUser,
+} from 'firebase/auth';
 import type { Employee } from '@/types';
-import { FIREBASE_ENABLED, auth } from '@/firebase/config';
-import { sampleStaff } from '@/data/sample';
+import { auth } from '@/firebase/config';
+import { subscribeMe, saveProfile } from '@/services/db';
+
+export type AuthStatus = 'loading' | 'signed_out' | 'no_profile' | 'ready';
 
 interface AuthState {
   user: Employee | null;
+  fbUser: { uid: string; email: string | null } | null;
+  status: AuthStatus;
   loading: boolean;
-  demo: boolean;
-  signIn: (email: string) => void;
-  signOut: () => void;
+  signIn: (email: string, password: string) => Promise<void>;
+  signUp: (firstName: string, lastName: string, email: string, password: string) => Promise<void>;
+  completeProfile: (p: { firstName: string; lastName: string; department: string; position: string }) => Promise<void>;
+  signOut: () => Promise<void>;
 }
 const Ctx = createContext<AuthState | null>(null);
 
+/** Firebase auth error codes → plain English. */
+function friendly(err: unknown): string {
+  const code = (err as { code?: string })?.code ?? '';
+  switch (code) {
+    case 'auth/invalid-email': return 'That email address looks wrong.';
+    case 'auth/user-not-found':
+    case 'auth/invalid-credential':
+    case 'auth/wrong-password': return 'Email or password is incorrect.';
+    case 'auth/email-already-in-use': return 'An account with this email already exists — sign in instead.';
+    case 'auth/weak-password': return 'Password must be at least 6 characters.';
+    case 'auth/too-many-requests': return 'Too many attempts. Wait a moment and try again.';
+    case 'auth/network-request-failed': return 'Network problem — check your connection.';
+    default: return 'Something went wrong. Please try again.';
+  }
+}
+
 export function AuthProvider({ children }: { children: ReactNode }) {
+  const [fbUser, setFbUser] = useState<{ uid: string; email: string | null } | null>(null);
   const [user, setUser] = useState<Employee | null>(null);
-  const [loading, setLoading] = useState(FIREBASE_ENABLED);
+  const [status, setStatus] = useState<AuthStatus>('loading');
+  const meUnsub = useRef<(() => void) | null>(null);
 
   useEffect(() => {
-    if (!FIREBASE_ENABLED || !auth) return;
-    // In live mode, wire firebase onAuthStateChanged -> load profile from RTDB.
-    // Scaffolded here; profile loading lands with the data layer.
-    setLoading(false);
+    return onAuthStateChanged(auth, (fb: FbUser | null) => {
+      meUnsub.current?.(); meUnsub.current = null;
+      if (!fb) { setFbUser(null); setUser(null); setStatus('signed_out'); return; }
+      setFbUser({ uid: fb.uid, email: fb.email });
+      setStatus('loading');
+      meUnsub.current = subscribeMe(fb.uid, (me) => {
+        setUser(me);
+        setStatus(me ? 'ready' : 'no_profile');
+      });
+    });
   }, []);
 
-  function signIn(email: string) {
-    // Demo mode: match a sample employee, default to the analyst.
-    const found = sampleStaff.find((s) => s.email === email) ?? sampleStaff.find((s) => s.uid === 's4')!;
-    setUser(found);
+  async function signIn(email: string, password: string) {
+    try { await signInWithEmailAndPassword(auth, email.trim(), password); }
+    catch (err) { throw new Error(friendly(err)); }
   }
-  function signOut() { setUser(null); }
+
+  async function signUp(firstName: string, lastName: string, email: string, password: string) {
+    try {
+      const cred = await createUserWithEmailAndPassword(auth, email.trim(), password);
+      await saveProfile(cred.user.uid, {
+        firstName: firstName.trim(), lastName: lastName.trim(), email: email.trim(),
+        department: '', position: '', status: 'active',
+      });
+    } catch (err) { throw new Error(friendly(err)); }
+  }
+
+  async function completeProfile(p: { firstName: string; lastName: string; department: string; position: string }) {
+    if (!fbUser) return;
+    await saveProfile(fbUser.uid, { ...p, email: fbUser.email ?? '', status: 'active' });
+  }
+
+  async function signOut() { await fbSignOut(auth); }
 
   return (
-    <Ctx.Provider value={{ user, loading, demo: !FIREBASE_ENABLED, signIn, signOut }}>
+    <Ctx.Provider value={{ user, fbUser, status, loading: status === 'loading', signIn, signUp, completeProfile, signOut }}>
       {children}
     </Ctx.Provider>
   );

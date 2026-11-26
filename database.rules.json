@@ -1,0 +1,89 @@
+{
+  "rules": {
+    ".read": false,
+    ".write": false,
+
+    "usersPublic": {
+      ".read": "auth != null && root.child('usersPublic').child(auth.uid).exists()",
+      "$uid": {
+        ".write": "auth != null && (auth.uid === $uid || root.child('roles').child(auth.uid).child('admin').val() === true)",
+        ".validate": "newData.hasChildren(['firstName','lastName','email'])",
+        "firstName": { ".validate": "newData.isString() && newData.val().length <= 60" },
+        "lastName": { ".validate": "newData.isString() && newData.val().length <= 60" },
+        "email": { ".validate": "newData.isString() && newData.val().length <= 120" },
+        "phone": { ".validate": "newData.isString() && newData.val().length <= 40" },
+        "department": { ".validate": "newData.isString() && newData.val().length <= 80" },
+        "position": { ".validate": "newData.isString() && newData.val().length <= 80" },
+        "status": { ".validate": "newData.isString()" },
+        "reportingManager": {
+          ".validate": "root.child('roles').child(auth.uid).child('admin').val() === true || !newData.exists() || newData.val() === data.val()"
+        },
+        "$other": { ".validate": false }
+      }
+    },
+
+    "roles": {
+      ".read": "auth != null && root.child('usersPublic').child(auth.uid).exists()",
+      "$uid": {
+        ".write": "root.child('roles').child(auth.uid).child('admin').val() === true",
+        "employee":  { ".validate": "newData.isBoolean()" },
+        "manager":   { ".validate": "newData.isBoolean()" },
+        "admin":     { ".validate": "newData.isBoolean()" },
+        "executive": { ".validate": "newData.isBoolean()" },
+        "$other": { ".validate": false }
+      }
+    },
+
+    "records": {
+      "$uid": {
+        ".read": "auth != null && (auth.uid === $uid || root.child('roles').child(auth.uid).child('admin').val() === true || root.child('roles').child(auth.uid).child('executive').val() === true || root.child('usersPublic').child($uid).child('reportingManager').val() === auth.uid)",
+        "$date": {
+          ".write": "auth != null && (auth.uid === $uid || root.child('roles').child(auth.uid).child('admin').val() === true)",
+          ".validate": "newData.hasChildren(['workLocation','source'])",
+          "clockIn":  { ".validate": "newData.isString() || newData.val() === null" },
+          "clockOut": { ".validate": "newData.isString() || newData.val() === null" },
+          "workLocation": { ".validate": "newData.val() === 'office' || newData.val() === 'home' || newData.val() === 'client_site'" },
+          "source": { ".validate": "newData.val() === 'self' || newData.val() === 'correction' || newData.val() === 'import'" }
+        }
+      }
+    },
+
+    "leaves": {
+      ".read": "auth != null && (root.child('roles').child(auth.uid).child('admin').val() === true || root.child('roles').child(auth.uid).child('executive').val() === true)",
+      "$uid": {
+        ".read": "auth != null && (auth.uid === $uid || root.child('usersPublic').child($uid).child('reportingManager').val() === auth.uid || root.child('roles').child(auth.uid).child('admin').val() === true || root.child('roles').child(auth.uid).child('executive').val() === true)",
+        "$id": {
+          ".write": "auth != null && ( ( auth.uid === $uid && (!data.exists() || data.child('status').val() === 'pending') && (newData.child('status').val() === 'pending' || newData.child('status').val() === 'cancelled') ) || root.child('roles').child(auth.uid).child('admin').val() === true || root.child('usersPublic').child($uid).child('reportingManager').val() === auth.uid )",
+          ".validate": "newData.hasChildren(['type','startDate','endDate','days','status'])",
+          "status": { ".validate": "newData.val() === 'pending' || newData.val() === 'approved' || newData.val() === 'rejected' || newData.val() === 'cancelled'" },
+          "days": { ".validate": "newData.isNumber() && newData.val() >= 0" }
+        }
+      }
+    },
+
+    "settings": {
+      ".read": "auth != null && root.child('usersPublic').child(auth.uid).exists()",
+      ".write": "root.child('roles').child(auth.uid).child('admin').val() === true"
+    },
+
+    "announcements": {
+      ".read": "auth != null && root.child('usersPublic').child(auth.uid).exists()",
+      ".write": "root.child('roles').child(auth.uid).child('admin').val() === true"
+    },
+
+    "notifs": {
+      "$uid": {
+        ".read": "auth != null && auth.uid === $uid",
+        ".write": "auth != null && (auth.uid === $uid || root.child('roles').child(auth.uid).child('admin').val() === true)"
+      }
+    },
+
+    "audit": {
+      ".read": "auth != null && root.child('roles').child(auth.uid).child('admin').val() === true",
+      "$id": {
+        ".write": "auth != null && !data.exists() && newData.child('actor').val() === auth.uid",
+        ".validate": "newData.hasChildren(['actor','action','at'])"
+      }
+    }
+  }
+}

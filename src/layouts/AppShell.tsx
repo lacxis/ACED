@@ -4,14 +4,13 @@ import { useAuth } from '@/context/AuthContext';
 import { Avatar } from '@/components/ui';
 import { IconGrid, IconClock, IconLeaf, IconUsers, IconBell } from '@/lib/icons';
 import { clocksIn, managesPeople, seesCompanyWide, roleLabel } from '@/domain/permissions';
-import { sampleStaff } from '@/data/sample';
+import { useStaff } from '@/services/hooks';
 
 interface Item { to: string; icon: typeof IconGrid; label: string; short: string; }
 
 /** Nav is built from the person's combined capabilities, not a single role. */
-function navFor(roles: Parameters<typeof clocksIn>[0], uid: string): Item[] {
+function navFor(roles: Parameters<typeof clocksIn>[0], manages: boolean): Item[] {
   const items: Item[] = [{ to: '/', icon: IconGrid, label: 'Dashboard', short: 'Home' }];
-  const manages = managesPeople({ uid, roles }, sampleStaff.map((s) => s.reportingManager));
   // Attendance: a label that fits — your own clock-in, and/or a register you oversee
   if (clocksIn(roles) || manages) {
     items.push({ to: '/attendance', icon: IconClock, label: manages ? 'Attendance' : 'My Attendance', short: 'Clock' });
@@ -26,8 +25,10 @@ function navFor(roles: Parameters<typeof clocksIn>[0], uid: string): Item[] {
 
 export function AppShell({ children }: { children: ReactNode }) {
   const { user, signOut } = useAuth();
+  const { staff } = useStaff();
   if (!user) return null;
-  const items = navFor(user.roles, user.uid);
+  const manages = managesPeople({ uid: user.uid, roles: user.roles }, staff.map((s) => s.reportingManager));
+  const items = navFor(user.roles, manages);
 
   return (
     <div className="app-shell">
