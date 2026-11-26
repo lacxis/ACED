@@ -5,6 +5,7 @@ import { LoginPage } from '@/features/auth/LoginPage';
 import { EmployeeDashboard } from '@/features/dashboard/EmployeeDashboard';
 import { AttendancePage } from '@/features/attendance/AttendancePage';
 import { LeavePage } from '@/features/leave/LeavePage';
+import { EmployeeDirectory } from '@/features/admin/EmployeeDirectory';
 
 function Placeholder({ title }: { title: string }) {
   return (
@@ -26,7 +27,7 @@ function Shell() {
       <Routes>
         <Route path="/" element={<EmployeeDashboard />} />
         <Route path="/attendance" element={<AttendancePage />} />
-        <Route path="/directory" element={<Placeholder title="Directory" />} />
+        <Route path="/directory" element={<EmployeeDirectory />} />
         <Route path="/leave" element={<LeavePage />} />
         <Route path="/notifications" element={<Placeholder title="Notifications" />} />
         <Route path="*" element={<Navigate to="/" replace />} />
