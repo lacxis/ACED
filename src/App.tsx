@@ -4,6 +4,7 @@ import { AppShell } from '@/layouts/AppShell';
 import { LoginPage } from '@/features/auth/LoginPage';
 import { EmployeeDashboard } from '@/features/dashboard/EmployeeDashboard';
 import { AttendancePage } from '@/features/attendance/AttendancePage';
+import { LeavePage } from '@/features/leave/LeavePage';
 
 function Placeholder({ title }: { title: string }) {
   return (
@@ -26,7 +27,7 @@ function Shell() {
         <Route path="/" element={<EmployeeDashboard />} />
         <Route path="/attendance" element={<AttendancePage />} />
         <Route path="/directory" element={<Placeholder title="Directory" />} />
-        <Route path="/leave" element={<Placeholder title="Leave" />} />
+        <Route path="/leave" element={<LeavePage />} />
         <Route path="/notifications" element={<Placeholder title="Notifications" />} />
         <Route path="*" element={<Navigate to="/" replace />} />
       </Routes>
