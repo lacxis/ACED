@@ -3,14 +3,15 @@ import type { Employee, AttendanceRecord, LeaveRequest } from '@/types';
 /** Fictional sample data for demo mode (VITE_FIREBASE_ENABLED=false).
  *  Real staff data arrives from Firebase once configured. */
 export const sampleStaff: Employee[] = [
-  { uid: 's1', firstName: 'Amara', lastName: 'Nwosu', email: 'a.nwosu@aced.com', department: 'Project Delivery', position: 'Project Lead', role: 'manager' },
-  { uid: 's2', firstName: 'Tunde', lastName: 'Bello', email: 't.bello@aced.com', department: 'Project Delivery', position: 'Senior Consultant', role: 'employee' },
-  { uid: 's3', firstName: 'Chidi', lastName: 'Okafor', email: 'c.okafor@aced.com', department: 'Project Delivery', position: 'Consultant', role: 'employee' },
-  { uid: 's4', firstName: 'Emeka', lastName: 'Udoh', email: 'e.udoh@aced.com', department: 'Project Delivery', position: 'Analyst', role: 'employee' },
-  { uid: 's5', firstName: 'David', lastName: 'Eze', email: 'd.eze@aced.com', department: 'Sales & Business Dev.', position: 'BD Manager', role: 'employee' },
-  { uid: 's6', firstName: 'Fatima', lastName: 'Yusuf', email: 'f.yusuf@aced.com', department: 'Marketing', position: 'Marketing Lead', role: 'employee' },
-  { uid: 's7', firstName: 'Grace', lastName: 'Adeyemi', email: 'g.adeyemi@aced.com', department: 'HR/Admin', position: 'HR Officer', role: 'admin' },
-  { uid: 's8', firstName: 'Samuel', lastName: 'Obi', email: 's.obi@aced.com', department: 'Project Delivery', position: 'Consultant', role: 'employee' },
+  { uid: 's9', firstName: 'Bisi', lastName: 'Okonkwo', email: 'b.okonkwo@aced.com', department: 'Executive', position: 'Managing Director', roles: { executive: true, manager: true } },
+  { uid: 's1', firstName: 'Amara', lastName: 'Nwosu', email: 'a.nwosu@aced.com', department: 'Project Delivery', position: 'Project Lead', roles: { employee: true, manager: true }, reportingManager: 's9' },
+  { uid: 's2', firstName: 'Tunde', lastName: 'Bello', email: 't.bello@aced.com', department: 'Project Delivery', position: 'Senior Consultant', roles: { employee: true }, reportingManager: 's1' },
+  { uid: 's3', firstName: 'Chidi', lastName: 'Okafor', email: 'c.okafor@aced.com', department: 'Project Delivery', position: 'Consultant', roles: { employee: true }, reportingManager: 's1' },
+  { uid: 's4', firstName: 'Emeka', lastName: 'Udoh', email: 'e.udoh@aced.com', department: 'Project Delivery', position: 'Analyst', roles: { employee: true }, reportingManager: 's1' },
+  { uid: 's5', firstName: 'David', lastName: 'Eze', email: 'd.eze@aced.com', department: 'Sales & Business Dev.', position: 'BD Manager', roles: { employee: true }, reportingManager: 's9' },
+  { uid: 's6', firstName: 'Fatima', lastName: 'Yusuf', email: 'f.yusuf@aced.com', department: 'Marketing', position: 'Marketing Lead', roles: { employee: true }, reportingManager: 's7' },
+  { uid: 's7', firstName: 'Grace', lastName: 'Adeyemi', email: 'g.adeyemi@aced.com', department: 'HR/Admin', position: 'HR Officer', roles: { employee: true, admin: true }, reportingManager: 's9' },
+  { uid: 's8', firstName: 'Samuel', lastName: 'Obi', email: 's.obi@aced.com', department: 'Project Delivery', position: 'Consultant', roles: { employee: true }, reportingManager: 's1' },
 ];
 
 export const sampleToday: Record<string, AttendanceRecord> = {

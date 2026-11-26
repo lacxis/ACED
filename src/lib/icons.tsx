@@ -21,3 +21,6 @@ export const IconArrow = svg(<path d="M5 12h14M13 6l6 6-6 6" />);
 
 export const IconBrief = svg(<><rect x="2.5" y="7.5" width="19" height="13" rx="2.5" /><path d="M8 7.5V6a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v1.5" /></>);
 export const IconCheck = svg(<path d="M20 6L9 17l-5-5" />);
+
+export const IconPlus = svg(<path d="M12 5v14M5 12h14" />);
+export const IconSearch = svg(<><circle cx="11" cy="11" r="7.5" /><path d="m21 21-4.3-4.3" /></>);

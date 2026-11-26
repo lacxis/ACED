@@ -25,7 +25,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   function signIn(email: string) {
     // Demo mode: match a sample employee, default to the analyst.
-    const found = sampleStaff.find((s) => s.email === email) ?? sampleStaff[3];
+    const found = sampleStaff.find((s) => s.email === email) ?? sampleStaff.find((s) => s.uid === 's4')!;
     setUser(found);
   }
   function signOut() { setUser(null); }

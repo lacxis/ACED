@@ -29,7 +29,7 @@ export function LoginPage() {
           <input type="password" defaultValue="demo-mode" style={inputStyle} />
           <div style={{ marginTop: '1rem' }}><Button full>Sign In <IconArrow size={16} /></Button></div>
           {demo && <p className="muted" style={{ fontSize: '.72rem', marginTop: '1rem', textAlign: 'center' }}>
-            Demo mode — any email signs you in. Try g.adeyemi@aced.com (admin) or a.nwosu@aced.com (manager).
+            Demo mode — any email signs you in. Try e.udoh@aced.com (employee), a.nwosu@aced.com (manager), g.adeyemi@aced.com (admin), or b.okonkwo@aced.com (executive — no clock-in).
           </p>}
         </form>
       </div>

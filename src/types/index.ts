@@ -1,4 +1,5 @@
-export type Role = 'admin' | 'manager' | 'employee';
+export type Role = 'employee' | 'manager' | 'admin' | 'executive';
+export type RoleSet = Partial<Record<Role, boolean>>;
 export type WorkLocation = 'office' | 'home' | 'client_site';
 export type AttendanceStatus =
   | 'not_started' | 'clocked_in' | 'present' | 'late'
@@ -12,7 +13,7 @@ export interface UserPrivate {
   joinDate: string; gender?: string; status: string; reportingManager?: string;
 }
 export interface Employee extends UserPublic {
-  uid: string; role: Role;
+  uid: string; roles: RoleSet; reportingManager?: string;
 }
 
 export interface ClientRef { clientId: string; projectRef?: string; siteLabel?: string; }
