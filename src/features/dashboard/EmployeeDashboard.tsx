@@ -2,6 +2,7 @@ import { useAuth } from '@/context/AuthContext';
 import { Card, Tile } from '@/components/ui';
 import { sampleBalances } from '@/data/sample';
 import { businessDate } from '@/domain/time';
+import { clocksIn, seesCompanyWide } from '@/domain/permissions';
 
 export function EmployeeDashboard() {
   const { user } = useAuth();
@@ -16,19 +17,28 @@ export function EmployeeDashboard() {
         <div style={{ color: 'var(--ink-2)', fontSize: '.8rem', marginTop: 3 }}>{today} · Office day · {businessDate()}</div>
       </div>
 
-      <div className="hero">
-        <div style={{ flex: 1 }}>
-          <h2 style={{ fontWeight: 800, fontSize: '1.4rem' }}>You're clocked in</h2>
-          <p style={{ color: 'rgba(255,255,255,.78)', fontSize: '.86rem', marginTop: '.4rem' }}>
-            On time today at the office. Have a good one.
-          </p>
+      {clocksIn(user.roles) ? (
+        <div className="hero">
+          <div style={{ flex: 1 }}>
+            <h2 style={{ fontWeight: 800, fontSize: '1.4rem' }}>You're clocked in</h2>
+            <p style={{ color: 'rgba(255,255,255,.78)', fontSize: '.86rem', marginTop: '.4rem' }}>On time today at the office. Have a good one.</p>
+          </div>
+          <div className="hero-clock" style={{ textAlign: 'center', background: 'rgba(255,255,255,.12)', border: '1px solid rgba(255,255,255,.22)', borderRadius: 20, padding: '1.15rem 1.4rem', marginLeft: 'auto' }}>
+            <div style={{ fontSize: '.64rem', fontWeight: 800, letterSpacing: '.1em', color: 'rgba(255,255,255,.7)' }}>TIME ON SITE</div>
+            <div className="tnum" style={{ fontSize: '1.9rem', margin: '.15rem 0 .55rem' }}>0:44</div>
+            <button style={{ background: '#fff', color: 'var(--navy)', fontWeight: 700, border: 0, borderRadius: 13, padding: '.62rem 1.6rem' }}>Clock Out</button>
+          </div>
         </div>
-        <div className="hero-clock" style={{ textAlign: 'center', background: 'rgba(255,255,255,.12)', border: '1px solid rgba(255,255,255,.22)', borderRadius: 20, padding: '1.15rem 1.4rem', marginLeft: 'auto' }}>
-          <div style={{ fontSize: '.64rem', fontWeight: 800, letterSpacing: '.1em', color: 'rgba(255,255,255,.7)' }}>TIME ON SITE</div>
-          <div className="tnum" style={{ fontSize: '1.9rem', margin: '.15rem 0 .55rem' }}>0:44</div>
-          <button style={{ background: '#fff', color: 'var(--navy)', fontWeight: 700, border: 0, borderRadius: 13, padding: '.62rem 1.6rem' }}>Clock Out</button>
+      ) : (
+        <div className="hero">
+          <div style={{ flex: 1 }}>
+            <h2 style={{ fontWeight: 800, fontSize: '1.4rem' }}>Company overview</h2>
+            <p style={{ color: 'rgba(255,255,255,.78)', fontSize: '.86rem', marginTop: '.4rem' }}>
+              {seesCompanyWide(user.roles) ? 'Read-only visibility across the organisation. You approve leave for anyone who reports to you.' : 'Welcome back.'}
+            </p>
+          </div>
         </div>
-      </div>
+      )}
 
       <div className="grid-3" style={{ marginTop: '1.05rem' }}>
         <Tile label="Today" value="Present" sub="Clocked in on time" tint="var(--green)" />
